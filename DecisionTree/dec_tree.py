@@ -4,6 +4,10 @@ from node import *
 
 attr_names = ['buying', 'maint', 'doors', 'persons', 'lug_boot', 'safety', 'label']
 attr_vals = [['vhigh', 'high', 'med', 'low'], ['vhigh', 'high', 'med', 'low'], ['2', '3', '4', '5more'], ['2', '4', 'more'], ['small', 'med', 'big'], ['low', 'med', 'high'], ['unacc', 'acc', 'good', 'vgood']]
+max_depth = 6
+#purity_measure = 'gini'
+purity_measure = 'entropy'
+#purity_measure = 'error'
 
 
 # Determines whether all the examples in the set e have the same label
@@ -101,18 +105,87 @@ def commonValue(examples, attr):
 
 # This really needs to be tested somehow
 def infoGain(examples, attr):
-	parent_entropy = entropy(examples, attr_vals[6])
+	if purity_measure == 'entropy':
+		parent_entropy = entropy(examples, attr_vals[6])
+		attr_index = attr_names.index(attr)
+		values = attr_vals[attr_index]
+		for val in values:
+			# calculate sub entropy
+			sub_examples = []
+			for ex in examples:
+				if ex[attr_index] ==  val:
+					sub_examples.append(ex)
+			sub_entropy = entropy(sub_examples, attr_vals[6])	
+			parent_entropy -= (len(sub_examples)/len(examples))*sub_entropy
+		return parent_entropy
+	elif purity_measure == 'gini':
+		attr_index = attr_names.index(attr)
+		values = attr_vals[attr_index]
+		parent_gini = giniIndex(examples, attr_names[6])
+		for val in values:
+			sub_examples = []
+			for ex in examples:
+				if ex[attr_index] == val:
+					sub_examples.append(ex)
+			sub_gini = giniIndex(sub_examples, attr_names[6])
+			parent_gini -= (len(sub_examples)/len(examples))*sub_gini
+		return parent_gini
+	else:
+		attr_index = attr_names.index(attr)
+		values = attr_vals[attr_index]
+		parent_error = majorityError(examples, attr_names[6])
+		for val in values:
+			sub_examples = []
+			for ex in examples:
+				if ex[attr_index] == val:
+					sub_examples.append(ex)
+			sub_error = majorityError(sub_examples, attr_names[6])
+			parent_error -= (len(sub_examples)/len(examples))*sub_error
+		return parent_error
+
+
+# Calculates the error in the examples set if the common label were chosen
+# for all examples.
+# examples: The set of examples to calculate the majority error over.
+# attr: The attribute to calculate majority error on
+def majorityError(examples, attr):
+	majority_label = commonValue(examples, attr)
 	attr_index = attr_names.index(attr)
-	values = attr_vals[attr_index]
-	for val in values:
-		# calculate sub entropy
-		sub_examples = []
-		for ex in examples:
-			if ex[attr_index] ==  val:
-				sub_examples.append(ex)
-		sub_entropy = entropy(sub_examples, attr_vals[6])	
-		parent_entropy -= (len(sub_examples)/len(examples))*sub_entropy
-	return parent_entropy
+	num_examples = len(examples)
+	
+	if num_examples == 0:
+		return 0.0
+
+	count = 0
+	for ex in examples:
+		if ex[attr_index] != majority_label:
+			count += 1
+	return count / num_examples
+
+
+def numVals(examples, attr, val):
+	count = 0
+	attr_index = attr_names.index(attr)
+	for ex in examples:
+		if ex[attr_index] == val:
+			count += 1
+	return count
+
+
+def giniIndex(examples, attr):
+	index = 1.0
+	num_examples = len(examples)
+	
+	if num_examples == 0:
+		return index
+
+	attr_index = attr_names.index(attr)
+	vals = attr_vals[attr_index]
+	for val in vals:
+		num_vals = numVals(examples, attr, val)
+		ratio = num_vals / num_examples
+		index -= pow(ratio, 2)
+	return index
 
 
 # Needs test
@@ -127,7 +200,7 @@ def pickBestAttrGain(examples, attrs):
 	return selected_attr
 
 
-def id3(examples, attrs, label):
+def id3(examples, attrs, label, depth):
 	if len(examples) < 1:
 		return Node("", {})
 
@@ -141,10 +214,10 @@ def id3(examples, attrs, label):
 	for val in vals:
 		sub_examples = exampleSubset(examples, selected_attr, val)
 		sub_attrs = attrSubset(attrs, selected_attr)
-		if len(sub_examples) == 0:
+		if len(sub_examples) == 0 or depth == max_depth - 1:
 			root.children[val] = Node(commonValue(examples, label), {})
 		else:
-			root.children[val] = id3(sub_examples, sub_attrs, label)
+			root.children[val] = id3(sub_examples, sub_attrs, label, depth + 1)
 	return root
 
 

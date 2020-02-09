@@ -140,15 +140,38 @@ def testCommonVal():
 		return False
 
 
-def testInfoGain():
-	print(infoGain(label_examples, attr_names[0]))
-	print(infoGain(label_examples, attr_names[1]))
-	print(infoGain(label_examples, attr_names[2]))
-	print(infoGain(label_examples, attr_names[3]))
-	print(infoGain(label_examples, attr_names[4]))
-	print(infoGain(label_examples, attr_names[5]))
+def testMajorityError():
+	exp_error = 0.6
+	calc_error = majorityError(label_examples, 'label')
+	if exp_error == calc_error:
+		return True
+	else:
+		notes.append('Expected the majority error to be 0.6 but it was', calc_error)
+		return False
 
+
+def testGiniIndex():
+	exp_index = 0.7
+	calc_index = giniIndex(label_examples, 'label')
+	if exp_index == calc_index:
+		return True
+	else:
+		notes.append('Expected Gini Index to be 0.7, but it was', calc_index)
+		return False
+
+
+def testInfoGain():
 	return True
+
+
+def testNumVals():
+	exp_num = 4
+	calc_num = numVals(label_examples, 'maint', 'high')
+	if exp_num == calc_num:
+		return True
+	else:
+		notes.append('Found the wrong number of examples with value high for attribute maint')
+		return False
 
 
 tests_run +=1
@@ -193,6 +216,16 @@ if testAttrsSubset():
 tests_run+=1
 if testCommonVal():
 	tests_passed+=1
+tests_run+=1
+if testMajorityError():
+	tests_passed+=1
+tests_run+=1
+if testGiniIndex():
+	tests_passed+=1
+tests_run+=1
+if testNumVals():
+	tests_passed+=1
+
 
 
 if tests_run == tests_passed:

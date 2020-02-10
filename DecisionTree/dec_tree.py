@@ -1,13 +1,49 @@
 import math
 from node import *
 
+bank_attr_names = ['age', 'job', 'marital', 'education', 'default', 'balance', 'housing', 'loan', 'contact', 'day', 'month', 'duration', 'campaign', 'pdays', 'previous', 'poutcome', 'y']
+bank_attrs = ['age', 'job', 'marital', 'education', 'default', 'balance', 'housing', 'loan', 'contact', 'day', 'month', 'duration', 'campaign', 'pdays', 'previous', 'poutcome']
+bank_attr_vals = [
+	[], 
+	['admin.', 'unknown', 'unemployed', 'management', 'housemaid', 'entrepreneur', 'student', 'blue-collar', 'self-employed', 'retired', 'technician', 'services'], 
+	['married', 'divorced', 'single'],
+	['unknown', 'secondary', 'primary', 'tertiary'],
+	['yes', 'no'],
+	[],
+	['yes', 'no'],
+	['yes', 'no'],
+	['unknown', 'telephone', 'cellular'],
+	[],
+	['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'],
+	[],
+	[],
+	[],
+	[],
+	['unknown', 'other', 'failure', 'success'],
+	['yes', 'no']
+]
+common_vals = []
+medians = {}
 
-attr_names = ['buying', 'maint', 'doors', 'persons', 'lug_boot', 'safety', 'label']
-attr_vals = [['vhigh', 'high', 'med', 'low'], ['vhigh', 'high', 'med', 'low'], ['2', '3', '4', '5more'], ['2', '4', 'more'], ['small', 'med', 'big'], ['low', 'med', 'high'], ['unacc', 'acc', 'good', 'vgood']]
-max_depth = 6
-#purity_measure = 'gini'
+
+car_attr_names = ['buying', 'maint', 'doors', 'persons', 'lug_boot', 'safety', 'label']
+car_attrs = ['buying', 'maint', 'doors', 'persons', 'lug_boot', 'safety']
+car_attr_vals = [['vhigh', 'high', 'med', 'low'], ['vhigh', 'high', 'med', 'low'], ['2', '3', '4', '5more'], ['2', '4', 'more'], ['small', 'med', 'big'], ['low', 'med', 'high'], ['unacc', 'acc', 'good', 'vgood']]
+
+attr_names = car_attr_names
+attrs = car_attrs
+attr_vals = car_attr_vals
+label = 'label'
+label_index = attr_names.index(label)
+
+accept_unknown = False
+max_depth = 100000
 purity_measure = 'entropy'
-#purity_measure = 'error'
+
+
+def findCommonAttrVals(examples):
+	for val in attr_names:
+		common_vals.append(commonValue(examples, val))
 
 
 # Determines whether all the examples in the set e have the same label
@@ -17,11 +53,38 @@ def allSameLabels(e):
 	if len(e) == 0:
 		return True
 	else:
-		label = e[0][6]
+		label = e[0][label_index]
 		for ex in e:
-			if ex[6] != label:
+			if ex[label_index] != label:
 				return False
 	return True
+
+
+def representsInt(s):
+	try:
+		int(s)
+		return True
+	except ValueError:
+		return False
+
+
+def calculateMedians(examples):
+	needs_sort = []
+	test_ex = examples[0]
+	ctr = 0
+	for val in test_ex:
+		if representsInt(val):
+			needs_sort.append(ctr)
+		ctr += 1
+
+	for index in needs_sort:
+		values = []
+		for ex in examples:
+			values.append(int(ex[index]))
+		values.sort()
+		median_index = len(values) / 2
+		median = values[int(median_index)]
+		medians[index] = median
 
 
 # Reads in the examples from a .csv file and puts them into the examples array
@@ -38,7 +101,7 @@ def populateExamples(file_name):
 def numLabelVals(examples, val):
 	ctr = 0
 	for ex in examples:
-		if ex[6] == val:
+		if ex[label_index] == val:
 			ctr += 1
 	return ctr
 
@@ -79,6 +142,24 @@ def exampleSubset(examples, attr, val):
 	return subset
 
 
+def exampleSubsetGreaterThan(examples, attr_index, median):
+	subset = []
+	for ex in examples:
+		val = int(ex[attr_index])
+		if val > int(median):
+			subset.append(ex)
+	return subset
+
+
+def examplesSubsetLessThanEqual(examples, attr_index, median):
+	subset = []
+	for ex in examples:
+		val = int(ex[attr_index])
+		if val <= int(median):
+			subset.append(ex)
+	return subset
+
+
 def attrSubset(attrs, attr):
 	subset = []
 	for a in attrs:
@@ -93,20 +174,21 @@ def commonValue(examples, attr):
 	highest_count = 0
 	selected_val = ''
 	for val in vals:
-		count = 0
-		for example in examples:
-			if example[attr_index] == val:
-				count += 1
-		if count > highest_count:
-			highest_count = count
-			selected_val = val
+		if (val == 'unknown' and accept_unknown) or val != 'unknown':
+			count = 0
+			for example in examples:
+				if example[attr_index] == val:
+					count += 1
+			if count > highest_count:
+				highest_count = count
+				selected_val = val
 	return selected_val
 
 
 # This really needs to be tested somehow
 def infoGain(examples, attr):
 	if purity_measure == 'entropy':
-		parent_entropy = entropy(examples, attr_vals[6])
+		parent_entropy = entropy(examples, attr_vals[label_index])
 		attr_index = attr_names.index(attr)
 		values = attr_vals[attr_index]
 		for val in values:
@@ -115,31 +197,31 @@ def infoGain(examples, attr):
 			for ex in examples:
 				if ex[attr_index] ==  val:
 					sub_examples.append(ex)
-			sub_entropy = entropy(sub_examples, attr_vals[6])	
+			sub_entropy = entropy(sub_examples, attr_vals[label_index])	
 			parent_entropy -= (len(sub_examples)/len(examples))*sub_entropy
 		return parent_entropy
 	elif purity_measure == 'gini':
 		attr_index = attr_names.index(attr)
 		values = attr_vals[attr_index]
-		parent_gini = giniIndex(examples, attr_names[6])
+		parent_gini = giniIndex(examples, attr_names[label_index])
 		for val in values:
 			sub_examples = []
 			for ex in examples:
 				if ex[attr_index] == val:
 					sub_examples.append(ex)
-			sub_gini = giniIndex(sub_examples, attr_names[6])
+			sub_gini = giniIndex(sub_examples, attr_names[label_index])
 			parent_gini -= (len(sub_examples)/len(examples))*sub_gini
 		return parent_gini
 	else:
 		attr_index = attr_names.index(attr)
 		values = attr_vals[attr_index]
-		parent_error = majorityError(examples, attr_names[6])
+		parent_error = majorityError(examples, attr_names[label_index])
 		for val in values:
 			sub_examples = []
 			for ex in examples:
 				if ex[attr_index] == val:
 					sub_examples.append(ex)
-			sub_error = majorityError(sub_examples, attr_names[6])
+			sub_error = majorityError(sub_examples, attr_names[label_index])
 			parent_error -= (len(sub_examples)/len(examples))*sub_error
 		return parent_error
 
@@ -205,19 +287,40 @@ def id3(examples, attrs, label, depth):
 		return Node("", {})
 
 	if allSameLabels(examples):
-		return Node(examples[0][6], {})
+		return Node(examples[0][label_index], {})
+	if len(attrs) == 0:
+		return Node(commonValue(examples, label), {})
 
 	selected_attr = pickBestAttrGain(examples, attrs)
 	root = Node(selected_attr, {})
 	attr_index = attr_names.index(selected_attr)
 	vals = attr_vals[attr_index]
-	for val in vals:
-		sub_examples = exampleSubset(examples, selected_attr, val)
+	if len(vals) == 0:
+		val = medians[attr_index]
+		greater_examples = exampleSubsetGreaterThan(examples, attr_index, val)
+		lessequal_examples = examplesSubsetLessThanEqual(examples, attr_index, val)
 		sub_attrs = attrSubset(attrs, selected_attr)
-		if len(sub_examples) == 0 or depth == max_depth - 1:
-			root.children[val] = Node(commonValue(examples, label), {})
+		if len(greater_examples) == 0 or depth == max_depth - 1:
+			root.children['>'] = Node(commonValue(examples, label), {})
+			root.children['>'].median = val
 		else:
-			root.children[val] = id3(sub_examples, sub_attrs, label, depth + 1)
+			root.children['>'] = id3(greater_examples, sub_attrs, label, depth + 1)
+		if len(lessequal_examples) == 0 or depth == max_depth - 1:
+			root.children['<='] = Node(commonValue(examples, label), {})
+			root.children['<='].median = val
+		else:
+			root.children['<='] = id3(lessequal_examples, sub_attrs, label, depth + 1)
+	else:		
+		for val in vals:
+			working_val = val
+			if val == 'unknown' and not accept_unknown:
+				working_val = common_vals[attr_index]
+			sub_examples = exampleSubset(examples, selected_attr, working_val)
+			sub_attrs = attrSubset(attrs, selected_attr)
+			if len(sub_examples) == 0 or depth == max_depth - 1:
+				root.children[working_val] = Node(commonValue(examples, label), {})
+			else:
+				root.children[working_val] = id3(sub_examples, sub_attrs, label, depth + 1)
 	return root
 
 
@@ -232,8 +335,18 @@ def attrValsContains(attr, candidate):
 
 def evaluateExample(root, example):
 	node = root
-	while not attrValsContains('label', node.name):
+	while not attrValsContains(label, node.name):
 		attr_index = attr_names.index(node.name)
-		node = node.children[example[attr_index]]
+		val = example[attr_index]
+		if val == 'unknown' and not accept_unknown:
+			val = common_vals[attr_index]
+		if representsInt(val):
+			median = int(node.median)
+			if int(val) <= median:
+				node = node.children['<=']
+			else:
+				node = node.children['>']
+		else:	
+			node = node.children[val]
 	return node.name
 

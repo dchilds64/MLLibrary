@@ -30,15 +30,32 @@ car_attr_names = ['buying', 'maint', 'doors', 'persons', 'lug_boot', 'safety', '
 car_attrs = ['buying', 'maint', 'doors', 'persons', 'lug_boot', 'safety']
 car_attr_vals = [['vhigh', 'high', 'med', 'low'], ['vhigh', 'high', 'med', 'low'], ['2', '3', '4', '5more'], ['2', '4', 'more'], ['small', 'med', 'big'], ['low', 'med', 'high'], ['unacc', 'acc', 'good', 'vgood']]
 
+
+# THESE ARE THE PARAMETERS THAT NEED TO BE EDITED TO DO THE BANK TREE!!!!!
 attr_names = car_attr_names
 attrs = car_attrs
 attr_vals = car_attr_vals
 label = 'label'
+car = True
+
+#attr_names = bank_attr_names
+#attrs = bank_attrs
+#attr_vals = bank_attr_vals
+#label = 'y'
+#car = False
+
+#############################################################################
+
 label_index = attr_names.index(label)
 
+# THESE ARE THE PARAMETERS THAT CAN OPTIONALLY BE EDITED!!!!!
 accept_unknown = False
 max_depth = 100000
 purity_measure = 'entropy'
+#purity_measure = 'gini'
+#purity_measure = 'error'
+
+###########################################################
 
 
 def findCommonAttrVals(examples):
@@ -340,7 +357,7 @@ def evaluateExample(root, example):
 		val = example[attr_index]
 		if val == 'unknown' and not accept_unknown:
 			val = common_vals[attr_index]
-		if representsInt(val):
+		if representsInt(val) and not car:
 			median = int(node.median)
 			if int(val) <= median:
 				node = node.children['<=']

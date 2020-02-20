@@ -1,61 +1,38 @@
 import math
 from node import *
 
-bank_attr_names = ['age', 'job', 'marital', 'education', 'default', 'balance', 'housing', 'loan', 'contact', 'day', 'month', 'duration', 'campaign', 'pdays', 'previous', 'poutcome', 'y']
-bank_attrs = ['age', 'job', 'marital', 'education', 'default', 'balance', 'housing', 'loan', 'contact', 'day', 'month', 'duration', 'campaign', 'pdays', 'previous', 'poutcome']
-bank_attr_vals = [
-	[], 
-	['admin.', 'unknown', 'unemployed', 'management', 'housemaid', 'entrepreneur', 'student', 'blue-collar', 'self-employed', 'retired', 'technician', 'services'], 
-	['married', 'divorced', 'single'],
-	['unknown', 'secondary', 'primary', 'tertiary'],
-	['yes', 'no'],
-	[],
-	['yes', 'no'],
-	['yes', 'no'],
-	['unknown', 'telephone', 'cellular'],
-	[],
-	['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'],
-	[],
-	[],
-	[],
-	[],
-	['unknown', 'other', 'failure', 'success'],
-	['yes', 'no']
-]
 common_vals = []
 medians = {}
 
-
-car_attr_names = ['buying', 'maint', 'doors', 'persons', 'lug_boot', 'safety', 'label']
-car_attrs = ['buying', 'maint', 'doors', 'persons', 'lug_boot', 'safety']
-car_attr_vals = [['vhigh', 'high', 'med', 'low'], ['vhigh', 'high', 'med', 'low'], ['2', '3', '4', '5more'], ['2', '4', 'more'], ['small', 'med', 'big'], ['low', 'med', 'high'], ['unacc', 'acc', 'good', 'vgood']]
-
-
-# THESE ARE THE PARAMETERS THAT NEED TO BE EDITED TO DO THE BANK TREE!!!!!
-attr_names = car_attr_names
-attrs = car_attrs
-attr_vals = car_attr_vals
-label = 'label'
-car = True
-
-#attr_names = bank_attr_names
+attr_names = []
 #attrs = bank_attrs
-#attr_vals = bank_attr_vals
-#label = 'y'
-#car = False
+attr_vals = []
+label = 'y'
+car = False
 
-#############################################################################
 
-label_index = attr_names.index(label)
+label_index = 0
 
-# THESE ARE THE PARAMETERS THAT CAN OPTIONALLY BE EDITED!!!!!
 accept_unknown = False
 max_depth = 100000
+# Other options are 'gini' and 'error'
 purity_measure = 'entropy'
-#purity_measure = 'gini'
-#purity_measure = 'error'
 
-###########################################################
+
+def learnTree(names, attributes, vals, lpos, c, examples, depth, measure, unknown):
+	attr_names = names
+	#attrs = attributes
+	attr_vals = vals
+	print('vals are', vals)
+	label = names[lpos]
+	label_index = lpos
+	print('possible values of the label are', attr_vals[label_index])
+	print('label position is', label_index)
+	car = c
+	accept_unknown = unknown
+	max_depth = depth
+	purity_measure = measure
+	return id3(examples, attributes, label, 0)
 
 
 def findCommonAttrVals(examples):
@@ -102,6 +79,7 @@ def calculateMedians(examples):
 		median_index = len(values) / 2
 		median = values[int(median_index)]
 		medians[index] = median
+	print(attr_vals)
 
 
 # Reads in the examples from a .csv file and puts them into the examples array
@@ -205,6 +183,8 @@ def commonValue(examples, attr):
 # This really needs to be tested somehow
 def infoGain(examples, attr):
 	if purity_measure == 'entropy':
+		print('current attribute values are', attr_vals)
+		print('current label index is', label_index)
 		parent_entropy = entropy(examples, attr_vals[label_index])
 		attr_index = attr_names.index(attr)
 		values = attr_vals[attr_index]

@@ -20,14 +20,20 @@ purity_measure = 'entropy'
 
 
 def learnTree(names, attributes, vals, lpos, c, examples, depth, measure, unknown):
+	global attr_names
+	global attr_vals
+	global label
+	global label_index
+	global car
+	global accept_unknown
+	global max_depth
+	global purity_measure
+
 	attr_names = names
 	#attrs = attributes
 	attr_vals = vals
-	print('vals are', vals)
 	label = names[lpos]
 	label_index = lpos
-	print('possible values of the label are', attr_vals[label_index])
-	print('label position is', label_index)
 	car = c
 	accept_unknown = unknown
 	max_depth = depth
@@ -79,7 +85,6 @@ def calculateMedians(examples):
 		median_index = len(values) / 2
 		median = values[int(median_index)]
 		medians[index] = median
-	print(attr_vals)
 
 
 # Reads in the examples from a .csv file and puts them into the examples array
@@ -183,8 +188,6 @@ def commonValue(examples, attr):
 # This really needs to be tested somehow
 def infoGain(examples, attr):
 	if purity_measure == 'entropy':
-		print('current attribute values are', attr_vals)
-		print('current label index is', label_index)
 		parent_entropy = entropy(examples, attr_vals[label_index])
 		attr_index = attr_names.index(attr)
 		values = attr_vals[attr_index]

@@ -28,14 +28,14 @@ car_attrs = ['buying', 'maint', 'doors', 'persons', 'lug_boot', 'safety']
 car_attr_vals = [['vhigh', 'high', 'med', 'low'], ['vhigh', 'high', 'med', 'low'], ['2', '3', '4', '5more'], ['2', '4', 'more'], ['small', 'med', 'big'], ['low', 'med', 'high'], ['unacc', 'acc', 'good', 'vgood']]
 
 examples = []
+attrs = []
 
-car = True
+car = False
 
 if car:
 	examples = populateExamples('car/train.csv')
 	
-	#root = id3(examples, attrs, 'label', 0)
-	learnTree(car_attr_names, car_attrs, car_attr_vals, 6, car, examples, 10000, 'entropy', True)
+	root = learnTree(car_attr_names, car_attrs, car_attr_vals, 6, car, examples, 10000, 'entropy', True)
 	
 	print('EVALUATING TRAINING EXAMPLES')
 	correct = 0
@@ -44,7 +44,7 @@ if car:
 		total += 1
 		label = evaluateExample(root, ex)
 		if label == ex[6]:
-			correct +=1
+			correct += 1
 
 	correct_ratio = correct / total
 	print('Evaluated', total, 'examples')
@@ -67,11 +67,10 @@ if car:
 	print(correct, 'examples were evaluated correctly')
 	print('Test error was:', (1 - correct_ratio) * 100, '%')
 else:
-	print('none of this should be hit')
 	examples = populateExamples('bank/train.csv')
 	calculateMedians(examples)
 	findCommonAttrVals(examples)
-	root = id3(examples, attrs, 'y', 0)
+	root = learnTree(bank_attr_names, bank_attrs, bank_attr_vals, 16, car, examples, 10000, 'entropy', True)
 
 	print('EVALUATING TRAINING EXAMPLES')
 	correct = 0

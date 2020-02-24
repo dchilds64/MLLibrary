@@ -1,8 +1,8 @@
 import math
+import statistics
 from node import *
 
 common_vals = []
-medians = {}
 
 attr_names = []
 #attrs = bank_attrs
@@ -19,26 +19,26 @@ max_depth = 100000
 purity_measure = 'entropy'
 
 
-def learnTree(names, attributes, vals, lpos, c, examples, depth, measure, unknown):
+# names, attributes, vals, lpos,
+def learnTree(attrs, vals, examples, depth, measure, unknown):
 	global attr_names
 	global attr_vals
-	global label
-	global label_index
-	global car
+	# global label
+	# global label_index
 	global accept_unknown
 	global max_depth
 	global purity_measure
 
-	attr_names = names
-	#attrs = attributes
+	attr_names = attrs
+	# #attrs = attributes
 	attr_vals = vals
-	label = names[lpos]
-	label_index = lpos
-	car = c
+	# label = names[lpos]
+	# label_index = lpos
 	accept_unknown = unknown
 	max_depth = depth
 	purity_measure = measure
-	return id3(examples, attributes, label, 0)
+	print(attrs)
+	return id3(examples, attrs[0:len(attrs) - 1], attrs[len(attrs) - 1], 0)
 
 
 def findCommonAttrVals(examples):
@@ -68,23 +68,46 @@ def representsInt(s):
 		return False
 
 
-def calculateMedians(examples):
+def colRepresentsInt(examples, index):
+	for ex in examples:
+		if not representsInt(ex[index]):
+				return False
+	return True
+
+
+# Takes the training and test examples and switches any numerical values for categorical values
+# by calculating the median of the training data, and then replacing all values for that attribute
+# with 'over' or 'under'. An important note is that 'over' includes values that are equal to the
+# median.
+def calculateMedians(examples, test_examples):
 	needs_sort = []
-	test_ex = examples[0]
 	ctr = 0
-	for val in test_ex:
-		if representsInt(val):
+
+	# Get the indices of the values with numeric values
+	for index in range(0, len(examples[0])):
+		if colRepresentsInt(examples, index):
 			needs_sort.append(ctr)
 		ctr += 1
 
+	# Loop through each of the values and find the median and replace the values with
+	# 'over' or 'under'
 	for index in needs_sort:
 		values = []
 		for ex in examples:
 			values.append(int(ex[index]))
 		values.sort()
-		median_index = len(values) / 2
-		median = values[int(median_index)]
-		medians[index] = median
+		median = statistics.median(values)
+		for ex in examples:
+			if float(ex[index]) >= median:
+				ex[index] = 'over'
+			else:
+				ex[index] = 'under'
+
+		for ex in test_examples:
+			if float(ex[index]) >= median:
+				ex[index] = 'over'
+			else:
+				ex[index] = 'under'
 
 
 # Reads in the examples from a .csv file and puts them into the examples array
@@ -295,32 +318,32 @@ def id3(examples, attrs, label, depth):
 	root = Node(selected_attr, {})
 	attr_index = attr_names.index(selected_attr)
 	vals = attr_vals[attr_index]
-	if len(vals) == 0:
-		val = medians[attr_index]
-		greater_examples = exampleSubsetGreaterThan(examples, attr_index, val)
-		lessequal_examples = examplesSubsetLessThanEqual(examples, attr_index, val)
+	# if len(vals) == 0:
+	# 	val = medians[attr_index]
+	# 	greater_examples = exampleSubsetGreaterThan(examples, attr_index, val)
+	# 	lessequal_examples = examplesSubsetLessThanEqual(examples, attr_index, val)
+	# 	sub_attrs = attrSubset(attrs, selected_attr)
+	# 	if len(greater_examples) == 0 or depth == max_depth - 1:
+	# 		root.children['>'] = Node(commonValue(examples, label), {})
+	# 		root.children['>'].median = val
+	# 	else:
+	# 		root.children['>'] = id3(greater_examples, sub_attrs, label, depth + 1)
+	# 	if len(lessequal_examples) == 0 or depth == max_depth - 1:
+	# 		root.children['<='] = Node(commonValue(examples, label), {})
+	# 		root.children['<='].median = val
+	# 	else:
+	# 		root.children['<='] = id3(lessequal_examples, sub_attrs, label, depth + 1)
+	# else:
+	for val in vals:
+		working_val = val
+		if val == 'unknown' and not accept_unknown:
+			working_val = common_vals[attr_index]
+		sub_examples = exampleSubset(examples, selected_attr, working_val)
 		sub_attrs = attrSubset(attrs, selected_attr)
-		if len(greater_examples) == 0 or depth == max_depth - 1:
-			root.children['>'] = Node(commonValue(examples, label), {})
-			root.children['>'].median = val
+		if len(sub_examples) == 0 or depth == max_depth - 1:
+			root.children[working_val] = Node(commonValue(examples, label), {})
 		else:
-			root.children['>'] = id3(greater_examples, sub_attrs, label, depth + 1)
-		if len(lessequal_examples) == 0 or depth == max_depth - 1:
-			root.children['<='] = Node(commonValue(examples, label), {})
-			root.children['<='].median = val
-		else:
-			root.children['<='] = id3(lessequal_examples, sub_attrs, label, depth + 1)
-	else:		
-		for val in vals:
-			working_val = val
-			if val == 'unknown' and not accept_unknown:
-				working_val = common_vals[attr_index]
-			sub_examples = exampleSubset(examples, selected_attr, working_val)
-			sub_attrs = attrSubset(attrs, selected_attr)
-			if len(sub_examples) == 0 or depth == max_depth - 1:
-				root.children[working_val] = Node(commonValue(examples, label), {})
-			else:
-				root.children[working_val] = id3(sub_examples, sub_attrs, label, depth + 1)
+			root.children[working_val] = id3(sub_examples, sub_attrs, label, depth + 1)
 	return root
 
 
@@ -335,18 +358,19 @@ def attrValsContains(attr, candidate):
 
 def evaluateExample(root, example):
 	node = root
+	# WTF IS THIS TRYING TO DO
 	while not attrValsContains(label, node.name):
 		attr_index = attr_names.index(node.name)
 		val = example[attr_index]
 		if val == 'unknown' and not accept_unknown:
 			val = common_vals[attr_index]
-		if representsInt(val) and not car:
-			median = int(node.median)
-			if int(val) <= median:
-				node = node.children['<=']
-			else:
-				node = node.children['>']
-		else:	
-			node = node.children[val]
+		# if representsInt(val) and not car:
+		# 	median = int(node.median)
+		# 	if int(val) <= median:
+		# 		node = node.children['<=']
+		# 	else:
+		# 		node = node.children['>']
+		# else:
+		node = node.children[val]
 	return node.name
 

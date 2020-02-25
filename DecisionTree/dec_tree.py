@@ -2,10 +2,7 @@ import math
 import statistics
 from node import *
 
-common_vals = []
-
 attr_names = []
-#attrs = bank_attrs
 attr_vals = []
 label = 'y'
 car = False
@@ -13,37 +10,28 @@ car = False
 
 label_index = 0
 
-accept_unknown = False
 max_depth = 100000
 # Other options are 'gini' and 'error'
 purity_measure = 'entropy'
 
 
 # names, attributes, vals, lpos,
-def learnTree(attrs, vals, examples, depth, measure, unknown):
+def learnTree(attrs, vals, examples, depth, measure):
 	global attr_names
 	global attr_vals
-	# global label
-	# global label_index
-	global accept_unknown
+	global label
+	global label_index
 	global max_depth
 	global purity_measure
 
 	attr_names = attrs
 	# #attrs = attributes
 	attr_vals = vals
-	# label = names[lpos]
-	# label_index = lpos
-	accept_unknown = unknown
+	label = attrs[len(attrs) - 1]
+	label_index = attr_names.index(label)
 	max_depth = depth
 	purity_measure = measure
-	print(attrs)
 	return id3(examples, attrs[0:len(attrs) - 1], attrs[len(attrs) - 1], 0)
-
-
-def findCommonAttrVals(examples):
-	for val in attr_names:
-		common_vals.append(commonValue(examples, val))
 
 
 # Determines whether all the examples in the set e have the same label
@@ -191,20 +179,19 @@ def attrSubset(attrs, attr):
 	return subset
 
 
-def commonValue(examples, attr):
-	attr_index = attr_names.index(attr)
-	vals = attr_vals[attr_index]
+def commonValue(examples, names, a_vals, attr):
+	attr_index = names.index(attr)
+	vals = a_vals[attr_index]
 	highest_count = 0
 	selected_val = ''
 	for val in vals:
-		if (val == 'unknown' and accept_unknown) or val != 'unknown':
-			count = 0
-			for example in examples:
-				if example[attr_index] == val:
-					count += 1
-			if count > highest_count:
-				highest_count = count
-				selected_val = val
+		count = 0
+		for example in examples:
+			if example[attr_index] == val:
+				count += 1
+		if count > highest_count:
+			highest_count = count
+			selected_val = val
 	return selected_val
 
 
@@ -254,7 +241,7 @@ def infoGain(examples, attr):
 # examples: The set of examples to calculate the majority error over.
 # attr: The attribute to calculate majority error on
 def majorityError(examples, attr):
-	majority_label = commonValue(examples, attr)
+	majority_label = commonValue(examples, attr_names, attr_vals, attr)
 	attr_index = attr_names.index(attr)
 	num_examples = len(examples)
 	
@@ -311,42 +298,27 @@ def id3(examples, attrs, label, depth):
 
 	if allSameLabels(examples):
 		return Node(examples[0][label_index], {})
+	# This means the data is noisy. i.e. all attributes have the same value but
+	# the labels are still different
 	if len(attrs) == 0:
-		return Node(commonValue(examples, label), {})
+		return Node(commonValue(examples, attr_names, attr_vals, label), {})
 
 	selected_attr = pickBestAttrGain(examples, attrs)
 	root = Node(selected_attr, {})
 	attr_index = attr_names.index(selected_attr)
 	vals = attr_vals[attr_index]
-	# if len(vals) == 0:
-	# 	val = medians[attr_index]
-	# 	greater_examples = exampleSubsetGreaterThan(examples, attr_index, val)
-	# 	lessequal_examples = examplesSubsetLessThanEqual(examples, attr_index, val)
-	# 	sub_attrs = attrSubset(attrs, selected_attr)
-	# 	if len(greater_examples) == 0 or depth == max_depth - 1:
-	# 		root.children['>'] = Node(commonValue(examples, label), {})
-	# 		root.children['>'].median = val
-	# 	else:
-	# 		root.children['>'] = id3(greater_examples, sub_attrs, label, depth + 1)
-	# 	if len(lessequal_examples) == 0 or depth == max_depth - 1:
-	# 		root.children['<='] = Node(commonValue(examples, label), {})
-	# 		root.children['<='].median = val
-	# 	else:
-	# 		root.children['<='] = id3(lessequal_examples, sub_attrs, label, depth + 1)
-	# else:
 	for val in vals:
-		working_val = val
-		if val == 'unknown' and not accept_unknown:
-			working_val = common_vals[attr_index]
-		sub_examples = exampleSubset(examples, selected_attr, working_val)
+		sub_examples = exampleSubset(examples, selected_attr, val)
 		sub_attrs = attrSubset(attrs, selected_attr)
 		if len(sub_examples) == 0 or depth == max_depth - 1:
-			root.children[working_val] = Node(commonValue(examples, label), {})
+			root.children[val] = Node(commonValue(examples, attr_names, attr_vals, label), {})
 		else:
-			root.children[working_val] = id3(sub_examples, sub_attrs, label, depth + 1)
+			root.children[val] = id3(sub_examples, sub_attrs, label, depth + 1)
 	return root
 
-
+# Checks if the value provided is a valid option for a value of the attribute provided.
+# attr: The attribute in question
+# candidate: The value to check validity for
 def attrValsContains(attr, candidate):
 	attr_index = attr_names.index(attr)
 	vals = attr_vals[attr_index]
@@ -358,19 +330,9 @@ def attrValsContains(attr, candidate):
 
 def evaluateExample(root, example):
 	node = root
-	# WTF IS THIS TRYING TO DO
 	while not attrValsContains(label, node.name):
 		attr_index = attr_names.index(node.name)
 		val = example[attr_index]
-		if val == 'unknown' and not accept_unknown:
-			val = common_vals[attr_index]
-		# if representsInt(val) and not car:
-		# 	median = int(node.median)
-		# 	if int(val) <= median:
-		# 		node = node.children['<=']
-		# 	else:
-		# 		node = node.children['>']
-		# else:
 		node = node.children[val]
 	return node.name
 

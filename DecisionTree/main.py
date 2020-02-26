@@ -1,16 +1,18 @@
 from dec_tree import *
 import sys
 
+# Names of the two datasets we are using
 bank_attr_names = ['age', 'job', 'marital', 'education', 'default', 'balance', 'housing', 'loan', 'contact', 'day', 'month', 'duration', 'campaign', 'pdays', 'previous', 'poutcome', 'y']
 car_attr_names = ['buying', 'maint', 'doors', 'persons', 'lug_boot', 'safety', 'label']
 
+# Decision tree variables
 common_vals = []
 attr_names = []
 attrs = []
 attr_vals = []
-
 examples = []
 
+# Configuration variables
 car = False
 train_file = 'bank/train.csv'
 test_file = 'bank/test.csv'
@@ -20,24 +22,33 @@ accept_unknown = False
 label_index = 0
 
 
+# Goes through the examples provided and pulls the possible values of each of the attributes.
 def learnDataFormat(examples):
 	global attr_vals
 
+	# Loop through each attribute index in the examples
 	for index in range(0, len(examples[0])):
 		possible_vals = []
+		# Get the possible values for the current attribute index
 		for ex in examples:
 			if not ex[index] in possible_vals:
 				possible_vals.append(ex[index])
 		is_int = True
+		# There are some attributes which have individual values that are numeric, but not all, so
+		# this checks that all of the possible values are numeric
 		for val in possible_vals:
 			if not representsInt(val):
 				is_int = False
 				break
+		# For the purposes of this library, numeric values are treated as categorical data by comparing
+		# each value to the median of the values in the training data and being replaced with 'over' or
+		# 'under', with 'over' including values that are equal to the median.
 		if is_int:
 			possible_vals = ['over', 'under']
 		attr_vals.append(possible_vals)
 
 
+# Goes through the examples provided and finds the common values for each of the attributes.
 def findCommonAttrVals(examples):
 	global common_vals
 	for val in attrs:
@@ -55,6 +66,25 @@ def findCommonAttrVals(examples):
 		common_vals.append(common_val)
 
 
+# Evaluate the data on the learned decision trees
+def evaluateExamples(msg, examples):
+	print('')
+	print(msg)
+	correct = 0
+	total = 0
+	for ex in examples:
+		total += 1
+		label = evaluateExample(root, ex)
+		if label == ex[label_index]:
+			correct += 1
+
+	correct_ratio = correct / total
+	print('Evaluated:', total)
+	print('Correct:  ', correct)
+	print('Error:     ', round((1 - correct_ratio) * 100, 2), '%', sep='')
+
+
+# Get the arguments passed in to the script
 if len(sys.argv) == 7:
 	car = sys.argv[1] == 'car'
 	train_file = sys.argv[2]
@@ -98,32 +128,6 @@ if not accept_unknown:
 # Learn the decision tree
 root = learnTree(attrs, attr_vals, examples, max_depth, purity)
 
-print('EVALUATING TRAINING EXAMPLES')
-correct = 0
-total = 0
-for ex in examples:
-	total += 1
-	label = evaluateExample(root, ex)
-	if label == ex[label_index]:
-		correct += 1
-	else:
-		label = evaluateExample(root, ex)
-
-correct_ratio = correct / total
-print('Evaluated', total, 'examples')
-print(correct, 'examples were evaluated correctly')
-print('Training error was:', (1 - correct_ratio) * 100, '%')
-print('EVALUATING TEST EXAMPLES')
-
-correct = 0
-total = 0
-for ex in test_examples:
-	total += 1
-	label = evaluateExample(root, ex)
-	if label == ex[label_index]:
-		correct += 1
-
-correct_ratio = correct / total
-print('Evaluated', total, 'examples')
-print(correct, 'examples were evaluated correctly')
-print('Test error was:', (1 - correct_ratio) * 100, '%')
+# Evaluate the quality of the learned tree on the training and test data
+evaluateExamples('EVALUATING TRAINING EXAMPLES', examples)
+evaluateExamples('EVALUATING TEST EXAMPLES', test_examples)

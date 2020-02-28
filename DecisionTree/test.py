@@ -1,5 +1,6 @@
 test_variable = True
 
+
 def testFunc():
   global test_variable
   test_variable = False
@@ -10,6 +11,6 @@ def otherFunc():
   print(test_variable)
 
 
-print(int(11/2))
-print(int(10/2))
-print(int(10/2) - 1)
+print(int(11 / 2))
+print(int(10 / 2))
+print(int(10 / 2) - 1)

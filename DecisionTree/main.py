@@ -72,7 +72,7 @@ if not accept_unknown:
     remove_unknown(examples, test_examples, attr_vals)
 
 # Learn the decision tree
-root = learnTree(attrs, attr_vals, examples, max_depth, purity)
+root = learnTree(attrs, attr_vals, examples, max_depth, purity, [])
 
 # Evaluate the quality of the learned tree on the training and test data
 evaluateExamples('EVALUATING TRAINING EXAMPLES', examples)

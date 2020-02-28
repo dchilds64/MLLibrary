@@ -1,6 +1,17 @@
 from dec_tree import *
 
 
+# Reads in the examples from a .csv file and puts them into the examples array
+# file_name: The file where the examples are located
+def populateExamples(file_name):
+    examples = []
+    with open(file_name, 'r') as f:
+        for line in f:
+            terms = line.strip().split(',')
+            examples.append(terms)
+    return examples
+
+
 # Goes through the examples provided and pulls the possible values of each of the attributes.
 def learnDataFormat(examples):
     attr_vals = []

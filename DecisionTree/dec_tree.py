@@ -15,7 +15,7 @@ purity_measure = 'entropy'
 
 
 # names, attributes, vals, lpos,
-def learnTree(attrs, vals, examples, depth, measure):
+def learnTree(attrs, vals, examples, depth, measure, weights):
     global attr_names
     global attr_vals
     global label
@@ -30,7 +30,7 @@ def learnTree(attrs, vals, examples, depth, measure):
     label_index = attr_names.index(label)
     max_depth = depth
     purity_measure = measure
-    return id3(examples, attrs[0:len(attrs) - 1], attrs[len(attrs) - 1], 0)
+    return id3(examples, attrs[0:len(attrs) - 1], attrs[len(attrs) - 1], 0, weights)
 
 
 # Determines whether all the examples in the set e have the same label
@@ -95,17 +95,6 @@ def calculateMedians(examples, test_examples):
                 ex[index] = 'over'
             else:
                 ex[index] = 'under'
-
-
-# Reads in the examples from a .csv file and puts them into the examples array
-# file_name: The file where the examples are located
-def populateExamples(file_name):
-    examples = []
-    with open(file_name, 'r') as f:
-        for line in f:
-            terms = line.strip().split(',')
-            examples.append(terms)
-    return examples
 
 
 def numLabelVals(examples, val, weights):
@@ -223,7 +212,10 @@ def infoGain(examples, attr, weights):
             # Calculate the entropy for those values
             sub_entropy = entropy(sub_examples, attr_vals[label_index], sub_weights)
             # Information gain formula
-            parent_entropy -= (len(sub_examples) / len(examples)) * sub_entropy
+            if len(weights) != 0:
+                parent_entropy -= (sum(sub_weights) / sum(weights)) * sub_entropy
+            else:
+                parent_entropy -= (len(sub_examples) / len(examples)) * sub_entropy
         return parent_entropy
     elif purity_measure == 'gini':
         attr_index = attr_names.index(attr)
@@ -296,18 +288,18 @@ def giniIndex(examples, attr):
 
 
 # Needs test
-def pickBestAttrGain(examples, attrs):
+def pickBestAttrGain(examples, attrs, weights):
     lowest_info_gain = 1000000.0
     selected_attr = ''
     for attr in attrs:
-        gain = infoGain(examples, attr, [])
+        gain = infoGain(examples, attr, weights)
         if gain < lowest_info_gain:
             lowest_info_gain = gain
             selected_attr = attr
     return selected_attr
 
 
-def id3(examples, attrs, label, depth):
+def id3(examples, attrs, label, depth, weights):
     if len(examples) < 1:
         return Node("", {})
 
@@ -318,7 +310,7 @@ def id3(examples, attrs, label, depth):
     if len(attrs) == 0:
         return Node(commonValue(examples, attr_names, attr_vals, label), {})
 
-    selected_attr = pickBestAttrGain(examples, attrs)
+    selected_attr = pickBestAttrGain(examples, attrs, weights)
     root = Node(selected_attr, {})
     attr_index = attr_names.index(selected_attr)
     vals = attr_vals[attr_index]
@@ -328,7 +320,7 @@ def id3(examples, attrs, label, depth):
         if len(sub_examples) == 0 or depth == max_depth - 1:
             root.children[val] = Node(commonValue(examples, attr_names, attr_vals, label), {})
         else:
-            root.children[val] = id3(sub_examples, sub_attrs, label, depth + 1)
+            root.children[val] = id3(sub_examples, sub_attrs, label, depth + 1, [])
     return root
 
 

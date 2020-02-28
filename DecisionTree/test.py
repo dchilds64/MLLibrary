@@ -2,13 +2,13 @@ test_variable = True
 
 
 def testFunc():
-  global test_variable
-  test_variable = False
-  otherFunc()
+    global test_variable
+    test_variable = False
+    otherFunc()
 
 
 def otherFunc():
-  print(test_variable)
+    print(test_variable)
 
 
 print(int(11 / 2))

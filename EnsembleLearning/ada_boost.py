@@ -66,7 +66,6 @@ def normalize_weights():
     total = sum(weights)
     for index in range(0, len(weights)):
         weights[index] = weights[index] / total
-    print(sum(weights))
 
 
 load_data()
@@ -78,6 +77,7 @@ while ctr < t:
     root = learnTree(attrs, attr_vals, examples, 1, 'entropy', weights)
     error = calculate_error(root, examples)
     vote = 0.5 * math.log((1 - error) / error)
+    print(root.name, error, vote)
     trees.append(root)
     votes.append(vote)
     update_weights(vote)

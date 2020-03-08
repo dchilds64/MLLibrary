@@ -289,12 +289,12 @@ def giniIndex(examples, attr):
 
 # Needs test
 def pickBestAttrGain(examples, attrs, weights):
-    lowest_info_gain = 1000000.0
+    highest_info_gain = -1
     selected_attr = ''
     for attr in attrs:
         gain = infoGain(examples, attr, weights)
-        if gain < lowest_info_gain:
-            lowest_info_gain = gain
+        if gain > highest_info_gain:
+            highest_info_gain = gain
             selected_attr = attr
     return selected_attr
 

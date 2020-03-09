@@ -121,6 +121,7 @@ def standard_perceptron(examples, test_examples):
             # Update the weights
             if is_error(prediction, ex):
                 update_weights(ex)
+    print('Learned weights vector:', weights)
     evaluate_examples(examples, 'EVALUATING TRAINING EXAMPLES')
     evaluate_examples(test_examples, 'EVALUATING TEST EXAMPLES')
 
@@ -162,5 +163,4 @@ def get_label(ex):
 
 examples = populate_examples('bank-note/train.csv')
 test_examples = populate_examples('bank-note/test.csv')
-averaged_perceptron(examples, test_examples)
-print(weights_total)
+standard_perceptron(examples, test_examples)

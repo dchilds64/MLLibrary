@@ -9,6 +9,7 @@ weights_total = [0, 0, 0, 0, 0]
 counts = []
 count = 1
 
+
 # Reads in the examples from a .csv file and puts them into the examples array
 # file_name: The file where the examples are located
 def populate_examples(file_name):
